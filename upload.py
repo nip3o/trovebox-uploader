@@ -3,6 +3,7 @@ import re
 import datetime
 
 from trovebox import Trovebox
+from trovebox.errors import TroveboxError
 
 def main():
     try:
@@ -22,12 +23,19 @@ def main():
         folder_name = album = None
 
         for filename in files:
-            if not re.match(r'^.+\.jpg$', filename, flags=re.IGNORECASE):
+            # Trovebox supports .jpg, .gif, and .png files
+            if not re.search(r'\.(jpg|jpeg|gif|png)$', filename, flags=re.IGNORECASE):
                 continue
 
             if not folder_name:
                 folder_name = root.split('/')[-1]
-                album = client.album.create(folder_name)
+
+                try:
+                    album = client.album.create(folder_name)
+                except TroveboxError, e:
+                    print e.message
+                    print 'Using full path as album name as fallback'
+
                 print 'Entering folder %s' % root
 
             print 'Uploading %s...' % filename
