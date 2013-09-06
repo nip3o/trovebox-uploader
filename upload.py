@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import datetime
 import unicodedata
 
 from trovebox import Trovebox
 from trovebox.errors import TroveboxError
 
-from progressbar import ProgressBar, SimpleProgress
+from progressbar import ProgressBar, Percentage, Bar, ETA, FileTransferSpeed
 
 def is_image(filename):
     # Trovebox supports .jpg, .gif, and .png files
@@ -25,10 +24,9 @@ def main():
         print
         raise e
 
-    starttime = datetime.datetime.now()
     files_count = size_count = 0
 
-    for root, folders, files in os.walk(u'.'):
+    for root, _, files in os.walk(u'.'):
         for filename in files:
             if not is_image(filename):
                 continue
@@ -38,7 +36,8 @@ def main():
 
     print 'Found %d files, total %d Mib' % (files_count, size_count / (1024 * 1024))
 
-    progress = ProgressBar(maxval=size_count).start()
+    widgets = [Percentage(), Bar(), ETA(), ' ', FileTransferSpeed()]
+    size = ProgressBar(maxval=size_count, widgets=widgets).start()
 
     for root, folders, files in os.walk(u'.'):
         folder_name = album = None
@@ -53,24 +52,18 @@ def main():
                 # album name font only supports precomposed filenames.
                 folder_name = unicodedata.normalize('NFC', root.split('/')[-1])
 
-   #             try:
-                album = client.album.create(folder_name)
+                try:
+                    album = client.album.create(folder_name)
 
-  #              except TroveboxError, e:
-  #                  print e.message
-  #                  print 'Using full path as album name as fallback'
-  #                  album = client.album.create(root)
-
- #               print 'Entering folder %s' % root
-
- #           print 'Uploading %s...' % filename
+                except TroveboxError, e:
+                    print e.message
+                    album = client.album.create(unicodedata.normalize('NFC', root))
 
             path = os.path.join(root, filename)
             client.photo.upload(path, albums=[album.id])
 
-            progress.update(os.path.getsize(path))
-
-    print datetime.datetime.now() - starttime
+            size.update(os.path.getsize(path))
+    size.finish()
 
 if __name__ == "__main__":
     main()
