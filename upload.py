@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import glob
 import datetime
 import unicodedata
 
 from trovebox import Trovebox
 from trovebox.errors import TroveboxError
+
+from progressbar import ProgressBar, SimpleProgress
 
 def is_image(filename):
     # Trovebox supports .jpg, .gif, and .png files
@@ -37,6 +38,8 @@ def main():
 
     print 'Found %d files, total %d Mib' % (files_count, size_count / (1024 * 1024))
 
+    progress = ProgressBar(maxval=size_count).start()
+
     for root, folders, files in os.walk(u'.'):
         folder_name = album = None
 
@@ -50,21 +53,22 @@ def main():
                 # album name font only supports precomposed filenames.
                 folder_name = unicodedata.normalize('NFC', root.split('/')[-1])
 
-                try:
-                    client.album.create(folder_name)
-                    album = client.album.create(folder_name)
+   #             try:
+                album = client.album.create(folder_name)
 
-                except TroveboxError, e:
-                    print e.message
-                    print 'Using full path as album name as fallback'
-                    album = client.album.create(root)
+  #              except TroveboxError, e:
+  #                  print e.message
+  #                  print 'Using full path as album name as fallback'
+  #                  album = client.album.create(root)
 
-                print 'Entering folder %s' % root
+ #               print 'Entering folder %s' % root
 
-            print 'Uploading %s...' % filename
+ #           print 'Uploading %s...' % filename
 
-            path = '%s/%s' % (root, filename)
+            path = os.path.join(root, filename)
             client.photo.upload(path, albums=[album.id])
+
+            progress.update(os.path.getsize(path))
 
     print datetime.datetime.now() - starttime
 
