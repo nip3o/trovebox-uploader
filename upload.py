@@ -19,7 +19,7 @@ def main():
     starttime = datetime.datetime.now()
 
     for root, folders, files in os.walk(os.getcwd()):
-        folder_name = None
+        folder_name = album = None
 
         for filename in files:
             if not re.match(r'^.+\.jpg$', filename, flags=re.IGNORECASE):
@@ -27,12 +27,13 @@ def main():
 
             if not folder_name:
                 folder_name = root.split('/')[-1]
+                album = client.album.create(folder_name)
                 print 'Entering folder %s' % root
 
             print 'Uploading %s...' % filename
 
             path = '%s/%s' % (root, filename)
-            client.photo.upload(path, tags=['API test', folder_name])
+            client.photo.upload(path, albums=[album.id])
 
     print datetime.datetime.now() - starttime
 
