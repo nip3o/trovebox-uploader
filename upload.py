@@ -25,6 +25,14 @@ def main():
         print
         raise e
 
+    logger = logging.getLogger('trovebox-upload')
+    hdlr = logging.FileHandler('upload.log')
+    formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
+    hdlr.setFormatter(formatter)
+
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.DEBUG)
+
     files_count = size_count = uploaded_count = 0
 
     for root, _, files in os.walk(u'.'):
@@ -52,22 +60,22 @@ def main():
                 # Mac OS uses decomposed unicode filenames, while the Trovebox
                 # album name font only supports precomposed filenames.
                 folder_name = unicodedata.normalize('NFC', root.split('/')[-1])
-                logging.info('Entering folder %s' % root)
+                logger.info('Entering folder %s' % root)
 
                 try:
                     album = client.album.create(folder_name)
 
                 except TroveboxError, e:
-                    logging.warning('Album "%s" already exists, falling back on path' % folder_name)
+                    logger.warning('Album "%s" already exists, falling back on path' % folder_name)
                     album = client.album.create(unicodedata.normalize('NFC', root))
 
             path = os.path.join(root, filename)
 
             try:
-                logging.info('Uploading %s' % filename)
+                logger.info('Uploading %s' % filename)
                 client.photo.upload(path, albums=[album.id])
             except TroveboxDuplicateError:
-                logging.warning('File %s was already uploaded' % path)
+                logger.warning('File %s was already uploaded' % path)
                 pass
 
             uploaded_count += os.path.getsize(path)
