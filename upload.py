@@ -1,9 +1,16 @@
+# -*- coding: utf-8 -*-
 import os
 import re
+import glob
 import datetime
+import unicodedata
 
 from trovebox import Trovebox
 from trovebox.errors import TroveboxError
+
+def is_image(filename):
+    # Trovebox supports .jpg, .gif, and .png files
+    return bool(re.search(r'\.(jpg|jpeg|gif|png)$', filename, flags=re.IGNORECASE))
 
 def main():
     try:
@@ -18,23 +25,39 @@ def main():
         raise e
 
     starttime = datetime.datetime.now()
+    files_count = size_count = 0
 
-    for root, folders, files in os.walk(os.getcwd()):
+    for root, folders, files in os.walk(u'.'):
+        for filename in files:
+            if not is_image(filename):
+                continue
+
+            files_count += 1
+            size_count += os.path.getsize(os.path.join(root, filename))
+
+    print 'Found %d files, total %d Mib' % (files_count, size_count / (1024 * 1024))
+
+    for root, folders, files in os.walk(u'.'):
         folder_name = album = None
 
         for filename in files:
-            # Trovebox supports .jpg, .gif, and .png files
-            if not re.search(r'\.(jpg|jpeg|gif|png)$', filename, flags=re.IGNORECASE):
+            if not is_image(filename):
                 continue
 
             if not folder_name:
-                folder_name = root.split('/')[-1]
+                # Convert decomposed string into a composed string.
+                # Mac OS uses decomposed unicode filenames, while the Trovebox
+                # album name font only supports precomposed filenames.
+                folder_name = unicodedata.normalize('NFC', root.split('/')[-1])
 
                 try:
+                    client.album.create(folder_name)
                     album = client.album.create(folder_name)
+
                 except TroveboxError, e:
                     print e.message
                     print 'Using full path as album name as fallback'
+                    album = client.album.create(root)
 
                 print 'Entering folder %s' % root
 
