@@ -56,7 +56,7 @@ def main():
     for root, folders, files in os.walk(u'.'):
         folder_name = album = None
 
-        for filename in files:
+        for filename in sorted(files):
             if is_hidden(filename) or not is_image(filename):
                 continue
 
