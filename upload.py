@@ -76,7 +76,8 @@ def main():
                 client.photo.upload(path, albums=[album.id])
             except TroveboxDuplicateError:
                 logger.warning('File %s was already uploaded' % path)
-                pass
+            except TroveboxError, e:
+                logger.error(e.message)
 
             uploaded_count += os.path.getsize(path)
             size.update(uploaded_count)
