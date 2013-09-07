@@ -65,6 +65,11 @@ def main():
                 # Mac OS uses decomposed unicode filenames, while the Trovebox
                 # album name font only supports precomposed filenames.
                 folder_name = unicodedata.normalize('NFC', root.split('/')[-1])
+
+                if is_hidden(folder_name):
+                    folder_name = None
+                    continue
+
                 logger.info('Entering folder %s' % root)
 
                 try:
