@@ -9,6 +9,11 @@ from trovebox.errors import TroveboxError, TroveboxDuplicateError
 
 from progressbar import ProgressBar, Percentage, Bar, ETA, FileTransferSpeed
 
+SKIP_HIDDEN = True
+
+def is_hidden(filename):
+    return (filename.startswith('.') and SKIP_HIDDEN)
+
 def is_image(filename):
     # Trovebox supports .jpg, .gif, and .png files
     return bool(re.search(r'\.(jpg|jpeg|gif|png)$', filename, flags=re.IGNORECASE))
@@ -37,7 +42,7 @@ def main():
 
     for root, _, files in os.walk(u'.'):
         for filename in files:
-            if not is_image(filename):
+            if is_hidden(filename) or not is_image(filename):
                 continue
 
             files_count += 1
@@ -52,7 +57,7 @@ def main():
         folder_name = album = None
 
         for filename in files:
-            if not is_image(filename):
+            if is_hidden(filename) or not is_image(filename):
                 continue
 
             if not folder_name:
